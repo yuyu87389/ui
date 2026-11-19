@@ -1,0 +1,31 @@
+name: b
+on: workflow_dispatch
+jobs:
+  b:
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+      - run: gh release download v1 --pattern '*.zip'
+        env:
+          GH_TOKEN: ${{ github.token }}
+      - run: unzip -q *.zip -d .
+      - run: ls -la
+      - run: test -d Morityu.xcodeproj
+      - run: test -d Resources/www
+      - run: |
+          xcodebuild -project Morityu.xcodeproj \
+            -scheme Morityu \
+            -sdk iphoneos \
+            -configuration Release \
+            -derivedDataPath build \
+            CODE_SIGN_IDENTITY="" \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGNING_ALLOWED=NO
+      - run: |
+          mkdir -p Payload
+          cp -R build/Build/Products/Release-iphoneos/Morityu.app Payload/
+          zip -qry Morityu.ipa Payload
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ipa
+          path: Morityu.ipa
